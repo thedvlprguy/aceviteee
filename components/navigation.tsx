@@ -16,9 +16,9 @@ export function Navigation() {
       active: pathname === '/test-series',
     },
     {
-      href: '/test/viteee-trial',
-      label: 'Take Test',
-      active: pathname === '/test/viteee-trial',
+      href: '/resources',
+      label: 'Resources',
+      active: pathname === '/resources',
     },
     {
       href: '/about',

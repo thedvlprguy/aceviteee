@@ -6,7 +6,6 @@ export default authMiddleware({
     "/about",
     "/sign-in",
     "/sign-up",
-    "/test/viteee-trial",
     "/api/webhook/clerk",
   ],
   ignoredRoutes: [
@@ -15,10 +14,6 @@ export default authMiddleware({
 })
 
 export const config = {
-  matcher: [
-    "/((?!.+\\.[\\w]+$|_next).*)",
-    "/",
-    "/(api|trpc)(.*)"
-  ]
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 }
 

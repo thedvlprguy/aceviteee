@@ -14,8 +14,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata = {
-  title: "ACEVITEEE - VITEEE Preparation Platform",
-  description: "Free VITEEE preparation platform with mock tests and resources",
+  title: "ACEVITEEE Platform",
+  description: "AI-powered test series for VITEEE preparation",
 }
 
 export default function RootLayout({
