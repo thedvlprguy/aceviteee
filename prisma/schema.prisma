@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TestResult {
+  id            String     @id @default(cuid())
+  userEmail     String
+  testName      String
+  score         Int
+  totalQuestions Int
+  date          DateTime   @default(now())
+  questions     Question[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([userEmail])
+}
+
+model Question {
+  id            String     @id @default(cuid())
+  question      String
+  options       String[]
+  correctAnswer String
+  userAnswer    String?
+  testResult    TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  testResultId  String
+
+  @@index([testResultId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserTestProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  testId    String
+  score     Int
+  completed Boolean  @default(false)
+  answers   Json?    // Stores user's answers
+  timeSpent Int      // in seconds
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model TestQuestion {
+  id            String   @id @default(cuid())
+  subject       String
+  question      String
+  options       String[] // Array of options
+  correctAnswer String
+  explanation   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

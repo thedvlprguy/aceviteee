@@ -1,50 +1,74 @@
 "use client"
 
-import { motion } from "framer-motion"
-import Link from "next/link"
+import Link from 'next/link'
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
-import { ThemeToggle } from "./theme-toggle"
-
-const navItems = [
-  { name: "Home", href: "/" },
-  { name: "Test Series", href: "/test-series" },
-  { name: "Resources", href: "/resources" },
-]
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 export function Navigation() {
+  const pathname = usePathname()
+
+  const routes = [
+    {
+      href: '/test-series',
+      label: 'Test Series',
+      active: pathname === '/test-series',
+    },
+    {
+      href: '/resources',
+      label: 'Resources',
+      active: pathname === '/resources',
+    },
+    {
+      href: '/about',
+      label: 'About Us',
+      active: pathname === '/about',
+    },
+    {
+      href: '/dashboard',
+      label: 'Dashboard',
+      active: pathname === '/dashboard',
+    },
+  ]
+
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="border-b bg-background"
-    >
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="font-mono text-lg">
-          ACEVITEEE
-        </Link>
+    <header className="border-b">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold">
+            ACEVITEEE
+          </Link>
 
-        <nav className="hidden md:flex items-center space-x-8">
-          {navItems.map((item) => (
-            <Link key={item.name} href={item.href} className="font-mono text-sm hover:text-primary transition-colors">
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center space-x-4">
-          <ThemeToggle />
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="font-mono text-sm hover:text-primary transition-colors">Sign In</button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          <nav className="flex items-center gap-6">
+            {routes.map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+              >
+                <Button 
+                  variant="ghost"
+                  className={cn(
+                    "hover:bg-accent hover:text-accent-foreground",
+                    route.active && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  {route.label}
+                </Button>
+              </Link>
+            ))}
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="default">Sign In</Button>
+              </SignInButton>
+            </SignedOut>
+          </nav>
         </div>
       </div>
-    </motion.header>
+    </header>
   )
 }
 
