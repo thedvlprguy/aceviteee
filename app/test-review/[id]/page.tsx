@@ -1,152 +1,196 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, CheckCircle, XCircle } from "lucide-react"
-import { Footer } from "@/components/footer"
+import { Button } from "@/components/ui/button"
+import Link from 'next/link'
+import { ArrowLeft, CheckCircle2, XCircle, PieChart } from "lucide-react"
+import { questions } from '@/app/test/viteee-trial/page'
 
-interface Question {
-  id: string
-  question: string
-  options: string[]
-  correctAnswer: string
-  userAnswer: string
-  explanation: string
+interface TestResult {
+  date: string
+  score: number
+  totalQuestions: number
+  timeSpent: number
+  answers: Record<number, string>
 }
 
-// Mock test review data
-const mockReview = {
-  id: '1',
-  title: 'VITEEE Physics Mock Test',
-  date: new Date().toISOString(),
-  score: 85,
-  totalQuestions: 100,
-  timeSpent: '2h 45m',
-  questions: [
-    {
-      id: '1',
-      question: 'A particle moves in a circular path of radius 2m with a constant speed of 4m/s. What is the magnitude of its acceleration?',
-      options: ['8 m/s²', '4 m/s²', '2 m/s²', '16 m/s²'],
-      correctAnswer: '8 m/s²',
-      userAnswer: '4 m/s²',
-      explanation: 'For circular motion, centripetal acceleration a = v²/r where v is velocity and r is radius. Here, a = (4)²/2 = 8 m/s²'
-    },
-    {
-      id: '2',
-      question: 'Which of the following is a vector quantity?',
-      options: ['Mass', 'Temperature', 'Displacement', 'Time'],
-      correctAnswer: 'Displacement',
-      userAnswer: 'Displacement',
-      explanation: 'Displacement is a vector quantity as it has both magnitude and direction.'
-    },
-    // Add more questions as needed
-  ]
+interface SubjectStats {
+  total: number
+  correct: number
+  percentage: number
 }
 
 export default function TestReview() {
   const params = useParams()
+  const [testResult, setTestResult] = useState<TestResult | null>(null)
+  const [subjectStats, setSubjectStats] = useState<Record<string, SubjectStats>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadTestResult = () => {
+      const results = JSON.parse(localStorage.getItem('testResults') || '[]')
+      const result = results[Number(params.id)]
+      if (result) {
+        setTestResult(result)
+        calculateSubjectStats(result.answers)
+      }
+      setLoading(false)
+    }
+
+    loadTestResult()
+  }, [params.id])
+
+  const calculateSubjectStats = (answers: Record<number, string>) => {
+    const stats: Record<string, SubjectStats> = {}
+    
+    questions.forEach((q, index) => {
+      if (!stats[q.subject]) {
+        stats[q.subject] = { total: 0, correct: 0, percentage: 0 }
+      }
+      
+      stats[q.subject].total++
+      if (answers[index] === q.correctAnswer) {
+        stats[q.subject].correct++
+      }
+    })
+
+    // Calculate percentages
+    Object.keys(stats).forEach(subject => {
+      stats[subject].percentage = Math.round((stats[subject].correct / stats[subject].total) * 100)
+    })
+
+    setSubjectStats(stats)
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center">
+        <div className="animate-spin">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!testResult) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold mb-4">Test not found</h1>
+        <Button asChild>
+          <Link href="/dashboard">Back to Dashboard</Link>
+        </Button>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="container mx-auto p-6 flex-1">
-        <Button variant="ghost" asChild className="mb-6">
-          <Link href="/dashboard" className="flex items-center">
+    <div className="container mx-auto p-6">
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="ghost" asChild>
+          <Link href="/dashboard">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Link>
         </Button>
+        <div className="flex-1" />
+        <Badge className="text-lg py-2">
+          Score: {Math.round((testResult.score / testResult.totalQuestions) * 100)}%
+        </Badge>
+      </div>
 
-        {/* Test Overview */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl">{mockReview.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Taken on {new Date(mockReview.date).toLocaleDateString()}
-                </p>
-              </div>
-              <Badge className="text-lg px-4 py-1">
-                {mockReview.score}%
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Questions</p>
-                <p className="text-2xl font-bold">{mockReview.totalQuestions}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Correct Answers</p>
-                <p className="text-2xl font-bold text-green-500">
-                  {Math.round((mockReview.score / 100) * mockReview.totalQuestions)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Time Spent</p>
-                <p className="text-2xl font-bold">{mockReview.timeSpent}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Subject-wise Performance */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PieChart className="h-5 w-5" />
+            Subject-wise Performance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(subjectStats).map(([subject, stats]) => (
+              <Card key={subject}>
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold mb-2">{subject}</h3>
+                  <div className="flex justify-between items-center">
+                    <span>{stats.correct}/{stats.total} correct</span>
+                    <Badge variant={stats.percentage >= 70 ? "default" : "secondary"}>
+                      {stats.percentage}%
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Questions Review */}
-        <div className="space-y-6">
-          {mockReview.questions.map((question, index) => (
-            <Card key={question.id}>
+      {/* Question Review */}
+      <div className="space-y-8">
+        {questions.map((question, index) => {
+          const isCorrect = testResult.answers[index] === question.correctAnswer
+          const userAnswer = testResult.answers[index]
+
+          return (
+            <Card key={index} className={isCorrect ? "border-green-500/20" : "border-red-500/20"}>
               <CardHeader>
                 <div className="flex items-start gap-4">
-                  <span className="text-muted-foreground">Q{index + 1}.</span>
-                  <div className="flex-1">
-                    <p className="font-medium">{question.question}</p>
+                  {isCorrect ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-500 mt-1 flex-shrink-0" />
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline">{question.subject}</Badge>
+                      <Badge variant="outline">Question {index + 1}</Badge>
+                    </div>
+                    <CardTitle className="text-lg font-medium">
+                      {question.question}
+                    </CardTitle>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Options */}
-                  <div className="grid gap-2">
-                    {question.options.map((option, optIndex) => (
+                <div className="ml-9">
+                  <div className="grid gap-2 mb-4">
+                    {question.options.map((option, optionIndex) => (
                       <div
-                        key={optIndex}
+                        key={optionIndex}
                         className={`p-3 rounded-lg border ${
                           option === question.correctAnswer
-                            ? 'border-green-500 bg-green-500/10'
-                            : option === question.userAnswer && option !== question.correctAnswer
-                            ? 'border-red-500 bg-red-500/10'
-                            : 'border-muted'
+                            ? "border-green-500 bg-green-500/10"
+                            : option === userAnswer && !isCorrect
+                            ? "border-red-500 bg-red-500/10"
+                            : "border-transparent"
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <span>{option}</span>
-                          {option === question.correctAnswer ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : option === question.userAnswer && option !== question.correctAnswer ? (
-                            <XCircle className="h-5 w-5 text-red-500" />
-                          ) : null}
-                        </div>
+                        {option}
+                        {option === question.correctAnswer && (
+                          <span className="ml-2 text-green-500">(Correct Answer)</span>
+                        )}
+                        {option === userAnswer && !isCorrect && (
+                          <span className="ml-2 text-red-500">(Your Answer)</span>
+                        )}
                       </div>
                     ))}
                   </div>
 
-                  {/* Explanation */}
-                  <div className="pt-4 border-t">
-                    <p className="text-sm font-medium">Explanation:</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {question.explanation}
-                    </p>
-                  </div>
+                  {!isCorrect && question.explanation && (
+                    <div className="mt-4 p-4 rounded-lg bg-muted">
+                      <p className="font-medium mb-2">Explanation:</p>
+                      <p className="text-muted-foreground">
+                        {question.explanation}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )
+        })}
       </div>
-      <Footer />
     </div>
   )
 } 
